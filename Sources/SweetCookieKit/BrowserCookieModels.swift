@@ -9,6 +9,7 @@ import Foundation
 public enum Browser: String, Sendable, Hashable, CaseIterable {
     case safari
     case chrome
+    case chromeDev
     case chromeBeta
     case chromeCanary
     case arc

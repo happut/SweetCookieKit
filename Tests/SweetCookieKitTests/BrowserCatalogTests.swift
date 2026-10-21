@@ -151,6 +151,40 @@ struct BrowserCatalogTests {
         #expect(yandexLabels.contains("Yandex Safe Storage|Yandex"))
         #expect(Browser.safari.safeStorageLabels.isEmpty)
     }
+
+    @Test
+    func `chrome dev follows chrome in import order and reuses chrome safe storage`() {
+        #expect(Browser.chromeDev.displayName == "Chrome Dev")
+        #expect(Browser.chromeDev.appBundleName == "Google Chrome Dev")
+        #expect(Browser.chromeDev.chromiumProfileRelativePath == "Google/Chrome Dev")
+        #expect(Browser.chromeDev.usesChromiumProfileStore)
+        let labels = Browser.chromeDev.safeStorageLabels.map { "\($0.service)|\($0.account)" }
+        #expect(labels == ["Chrome Safe Storage|Chrome"])
+
+        let order = Browser.defaultImportOrder
+        guard let chromeIndex = order.firstIndex(of: .chrome) else {
+            Issue.record("Chrome missing from default import order")
+            return
+        }
+        #expect(order.dropFirst(chromeIndex + 1).first == .chromeDev)
+    }
+
+    @Test
+    func `chrome dev discovers synthetic chromium profile stores`() throws {
+        let home = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: home) }
+        let root = try #require(
+            ChromiumProfileLocator.roots(for: [.chromeDev], homeDirectories: [home]).first)
+        #expect(root.url == home.appendingPathComponent("Library/Application Support/Google/Chrome Dev"))
+        for profile in ["Default", "Profile 1"] {
+            let directory = root.url.appendingPathComponent(profile)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try Data().write(to: directory.appendingPathComponent("Cookies"))
+        }
+        let stores = BrowserCookieClient(configuration: .init(homeDirectories: [home])).stores(for: .chromeDev)
+        #expect(Set(stores.map(\.profile.name)) == Set(["Default", "Profile 1"]))
+        #expect(stores.allSatisfy { $0.browser == .chromeDev })
+    }
 }
 
 #endif
