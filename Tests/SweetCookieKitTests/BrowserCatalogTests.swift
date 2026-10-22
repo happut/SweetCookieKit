@@ -153,7 +153,7 @@ struct BrowserCatalogTests {
     }
 
     @Test
-    func `chrome dev follows chrome in import order and reuses chrome safe storage`() {
+    func `chrome dev joins the chrome channel group after the principal browsers`() throws {
         #expect(Browser.chromeDev.displayName == "Chrome Dev")
         #expect(Browser.chromeDev.appBundleName == "Google Chrome Dev")
         #expect(Browser.chromeDev.chromiumProfileRelativePath == "Google/Chrome Dev")
@@ -162,11 +162,13 @@ struct BrowserCatalogTests {
         #expect(labels == ["Chrome Safe Storage|Chrome"])
 
         let order = Browser.defaultImportOrder
-        guard let chromeIndex = order.firstIndex(of: .chrome) else {
-            Issue.record("Chrome missing from default import order")
-            return
-        }
-        #expect(order.dropFirst(chromeIndex + 1).first == .chromeDev)
+        let devIndex = try #require(order.firstIndex(of: .chromeDev))
+        let canaryIndex = try #require(order.firstIndex(of: .chromeCanary))
+        let betaIndex = try #require(order.firstIndex(of: .chromeBeta))
+        let edgeIndex = try #require(order.firstIndex(of: .edge))
+        // Chrome Dev sits with the other Chrome channels, after the principal browsers.
+        #expect(betaIndex < canaryIndex && canaryIndex + 1 == devIndex)
+        #expect(edgeIndex < betaIndex)
     }
 
     @Test

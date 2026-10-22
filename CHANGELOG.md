@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Add Chrome Dev as a Chromium cookie source immediately after Chrome in the default import order, reusing Chrome's Safe Storage keychain labels.
+- Add Chrome Dev as a Chromium cookie source, grouped with the other Chrome channels (Beta and Canary) in the default import order and reusing Chrome's Safe Storage keychain labels.
 
 ## 0.5.9 — 2026-10-20
 
