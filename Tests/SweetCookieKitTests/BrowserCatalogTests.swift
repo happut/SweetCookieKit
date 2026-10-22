@@ -187,6 +187,32 @@ struct BrowserCatalogTests {
         #expect(Set(stores.map(\.profile.name)) == Set(["Default", "Profile 1"]))
         #expect(stores.allSatisfy { $0.browser == .chromeDev })
     }
+
+    @Test
+    func `explicit browser selection by rawValue is retained after chrome dev upgrade`() throws {
+        // Simulate a downstream consumer (e.g., CodexBar) that stored an explicit
+        // browser selection as a rawValue string before Chrome Dev existed.
+        let storedBrowserID = "chrome"
+
+        // After upgrading to a version with Chrome Dev, filtering the default order
+        // by the stored rawValue should still yield only Chrome.
+        let order = Browser.defaultImportOrder
+        let filtered = order.filter { $0.rawValue == storedBrowserID }
+        #expect(filtered == [.chrome])
+        #expect(!filtered.contains(.chromeDev))
+
+        // Chrome Dev should be present in the unfiltered order (proving it was added).
+        #expect(order.contains(.chromeDev))
+
+        // And grouped with other Chrome channels after the principal browsers.
+        let chromeIndex = try #require(order.firstIndex(of: .chrome))
+        let betaIndex = try #require(order.firstIndex(of: .chromeBeta))
+        let canaryIndex = try #require(order.firstIndex(of: .chromeCanary))
+        let devIndex = try #require(order.firstIndex(of: .chromeDev))
+        #expect(chromeIndex < betaIndex)
+        #expect(betaIndex < canaryIndex)
+        #expect(canaryIndex < devIndex)
+    }
 }
 
 #endif
